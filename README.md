@@ -15,6 +15,8 @@ Application web de gestion des projets et des ressources pour le périmètre Dig
 - 📘 **[Documentation Technique](./docs/TECHNICAL_DOCUMENTATION.md)** - Architecture, diagrammes et API
 - 🎨 **[Guide de Style](./docs/STYLE_GUIDE.md)** - Design system et styles SCSS
 - 🐳 **[Guide de Déploiement Docker](./docs/DOCKER_DEPLOYMENT.md)** - Déploiement avec Docker Compose
+- 📸 **[Guide Upload d'Images](./docs/IMAGE_UPLOAD_GUIDE.md)** - Upload de logos et photos avec drag & drop
+- 🔌 **[État des Endpoints API](./docs/API_ENDPOINTS_STATUS.md)** - Documentation complète des endpoints
 
 ## ✨ Fonctionnalités
 
@@ -25,26 +27,51 @@ Application web de gestion des projets et des ressources pour le périmètre Dig
 
 ### 📁 Gestion des Projets
 - ✅ **CRUD complet** : Créer, Lire, Modifier, Supprimer
-- ✅ **Upload de logo** : Image du projet (max 1MB)
-- ✅ **Éditeur riche** : Description avec formatage
-- ✅ **Gestion des dates** : Date de début/fin
+- ✅ **Upload de logo** : Drag & drop d'images (max 5MB)
+  - Support multipart/form-data
+  - Support Base64 depuis le frontend
+  - Prévisualisation en temps réel
+  - Validation côté client et serveur
+- ✅ **Éditeur riche** : Description avec formatage (Quill)
+- ✅ **Gestion des dates** : Date de début/fin avec calendrier
 - ✅ **Statuts paramétrables** : En cours, Terminé, En pause, Annulé, Planifié
-- ✅ **Recherche et filtres**
+- ✅ **Recherche et filtres** : Par nom, statut, date
 - ✅ **Affichage moderne** avec avatars et badges
 - ✅ **Dialog de confirmation** pour les suppressions
+- ✅ **Composant réutilisable** : ImageUploadComponent avec drag & drop
 
 ### 👥 Gestion des Collaborateurs
 - ✅ **CRUD complet** : Gestion des collaborateurs
-- ✅ **Upload de photo** : Photo professionnelle (max 1MB)
+- ✅ **Upload de photo** : Drag & drop de photos professionnelles (max 5MB)
+  - Zone de dépôt stylisée
+  - Animation au survol
+  - Compression automatique
+  - Stockage optimisé
 - ✅ **Informations détaillées** :
   - Nom, Prénom, Email professionnel
   - Grade : A4, A5, B1, B2, B3, C1, C2, C3
   - Poste : Développeur, Tech Lead, PO, QA, Scrum Master, etc.
   - Site : Casa, Rabat, Indifférent
-- ✅ **Gestion des compétences** : Tags de skills techniques
-- ✅ **Disponibilité** : Disponible / Occupé
-- ✅ **Recherche et filtres**
+- ✅ **Gestion des compétences** : Tags de skills techniques (Chips)
+- ✅ **Disponibilité** : Toggle Disponible / Occupé
+- ✅ **Recherche et filtres** : Multi-critères
 - ✅ **Dialog de confirmation** pour les suppressions
+
+### 📸 Système d'Upload d'Images
+- ✅ **Composant moderne** : ImageUploadComponent standalone
+  - Interface drag & drop élégante
+  - Animations fluides (float, hover, scale)
+  - Validation en temps réel (type, taille)
+  - Prévisualisation immédiate
+  - Suppression avec confirmation
+- ✅ **Backend robuste** : FileStorageService
+  - Support multipart et Base64
+  - Validation MIME types
+  - Génération de noms uniques (UUID)
+  - Stockage local avec gestion de répertoires
+  - Endpoints RESTful sécurisés
+- ✅ **Types supportés** : JPG, PNG, GIF, SVG, WebP
+- ✅ **Sécurité** : Validation taille, type, path traversal prevention
 
 ### 🔗 Affectation Ressources
 - ✅ Affecter des collaborateurs aux projets
@@ -68,24 +95,30 @@ graph TB
     subgraph "Frontend - Angular 17"
         A[Components] --> B[Services]
         B --> C[Guards]
+        D[ImageUploadComponent] --> B
     end
     
     subgraph "Backend - Spring Boot 3.2"
-        D[Controllers] --> E[Use Cases]
-        E --> F[Domain Services]
-        F --> G[Repositories]
+        E[Controllers] --> F[Use Cases]
+        F --> G[Domain Services]
+        G --> H[Repositories]
+        I[FileStorageService] --> J[Disk Storage]
     end
     
     subgraph "Database"
-        H[(SQL Server 2022)]
+        K[(SQL Server 2022)]
     end
     
-    B -->|HTTP/REST + JWT| D
-    G -->|JPA/Hibernate| H
+    B -->|HTTP/REST + JWT| E
+    D -->|Base64/Multipart| E
+    G -->|JPA/Hibernate| K
+    I -->|Read/Write| J
     
     style A fill:#667eea
-    style D fill:#764ba2
-    style H fill:#f5576c
+    style D fill:#f5576c
+    style E fill:#764ba2
+    style I fill:#4CAF50
+    style K fill:#f5576c
 ```
 
 ### Technologies
@@ -99,17 +132,20 @@ graph TB
 - **SQL Server 2022** - Base de données
 - **iText 7** - Génération PDF
 - **Maven** - Gestion des dépendances
+- **FileStorageService** - Gestion d'uploads avec support Base64
 
 #### Frontend
 - **Angular 17** - Framework frontend avec standalone components
 - **TypeScript 5.2** - Langage
 - **PrimeNG** - Bibliothèque UI moderne
-  - Table, Dialog, Calendar, Editor
-  - FileUpload, Dropdown, Chips, Avatar
+  - Table, Dialog, Calendar, **Editor (Quill)**
+  - **FileUpload**, Dropdown, Chips, Avatar
   - Button, Card, Tag, MenuBar, Toast
   - ConfirmDialog, ConfirmationService
+- **Quill 1.3.7** - Éditeur de texte riche
 - **RxJS** - Programmation réactive
 - **SCSS** - Styles avec design system moderne
+- **HTML5 Drag & Drop API** - Upload d'images moderne
 
 #### DevOps
 - **Docker & Docker Compose** - Conteneurisation
@@ -175,31 +211,38 @@ Le dashboard vous donne une vue d'ensemble :
 - 📊 **Statistiques** : Nombre de projets et collaborateurs
 - 🚀 **Actions rapides** : Accès direct aux fonctionnalités principales
 
-### 3. Créer un Projet
+### 3. Créer un Projet avec Logo
 
 1. **Projets** → **Nouveau projet**
-2. Remplissez :
+2. **Upload du logo** :
+   - Glissez-déposez une image dans la zone prévue
+   - OU cliquez pour sélectionner un fichier
+   - Formats : JPG, PNG, SVG (max 5MB)
+   - Prévisualisation instantanée
+3. Remplissez les autres champs :
    - Nom du projet ⭐
-   - Logo (optionnel, max 1MB)
-   - Description/Objectifs ⭐ (éditeur riche)
+   - Description/Objectifs ⭐ (éditeur riche Quill)
    - Date de début ⭐
    - Date de fin (optionnelle)
    - Statut ⭐
-3. **Créer**
+4. **Créer**
 
-### 4. Ajouter un Collaborateur
+### 4. Ajouter un Collaborateur avec Photo
 
 1. **Collaborateurs** → **Nouveau collaborateur**
-2. Remplissez :
-   - Photo (optionnelle)
+2. **Upload de photo** :
+   - Zone drag & drop avec animation
+   - Aperçu en temps réel
+   - Boutons d'édition/suppression au survol
+3. Remplissez les informations :
    - Prénom & Nom ⭐
    - Email ⭐
    - Grade ⭐ (A4-C3)
    - Poste ⭐
    - Site ⭐ (Casa/Rabat/Indifférent)
-   - Compétences (tags)
+   - Compétences (tags cliquables)
    - Disponibilité (toggle)
-3. **Créer**
+4. **Créer**
 
 ### 5. Affecter des Ressources
 
@@ -212,7 +255,10 @@ Le dashboard vous donne une vue d'ensemble :
 
 1. Ouvrez un **projet**
 2. **Générer newsletter**
-3. Le PDF se télécharge automatiquement
+3. Le PDF se télécharge automatiquement avec :
+   - Logo du projet
+   - Photos des collaborateurs
+   - Compétences formatées
 
 📖 **Pour un guide détaillé, consultez le [Guide Utilisateur](./docs/USER_GUIDE.md)**
 
@@ -228,6 +274,8 @@ Le dashboard vous donne une vue d'ensemble :
 | Success | `#4CAF50` | États de succès |
 | Warning | `#FF9800` | Avertissements |
 | Info | `#2196F3` | Informations |
+| Gray 100 | `#f9fafb` | Backgrounds clairs |
+| Gray 300 | `#d1d5db` | Bordures |
 
 ### Gradients Signature
 
@@ -240,6 +288,25 @@ background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 
 // Background Gradient
 background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+
+// Upload Zone Gradient
+background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+```
+
+### Animations
+
+```scss
+// Float Animation (Upload Icon)
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+// Hover Effects
+.drop-zone:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(102, 126, 234, 0.1);
+}
 ```
 
 🎨 **Pour plus de détails, consultez le [Guide de Style](./docs/STYLE_GUIDE.md)**
@@ -249,11 +316,23 @@ background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 ```
 DigicampMonitoring/
 ├── back/                          # Backend Spring Boot
-│   ├── src/main/java/com/digicampmonitoring/
-│   │   ├── application/           # Use Cases & DTOs
-│   │   ├── domain/                # Domain Models & Services
-│   │   ├── infrastructure/        # Config & Security
-│   │   └── presentation/          # Controllers
+│   ├── src/main/java/com/digicamp/monitoring/
+│   │   ├── application/service/
+│   │   │   └── FileStorageService.java        # Interface upload
+│   │   ├── domain/model/
+│   │   │   ├── Project.java                   # +logoUrl
+│   │   │   └── Collaborator.java              # +photoUrl
+│   │   ├── infrastructure/
+│   │   │   ├── config/
+│   │   │   │   └── StorageProperties.java     # Config upload
+│   │   │   └── service/
+│   │   │       └── FileStorageServiceImpl.java # Implémentation
+│   │   └── presentation/
+│   │       ├── controller/
+│   │       │   └── FileController.java        # Endpoints upload
+│   │       └── dto/
+│   │           ├── project/ProjectRequest.java  # +logoBase64
+│   │           └── collaborator/CollaboratorRequest.java # +photoBase64
 │   └── pom.xml
 ├── front/                         # Frontend Angular
 │   ├── src/app/
@@ -263,18 +342,26 @@ DigicampMonitoring/
 │   │   │   ├── dashboard/         # Dashboard
 │   │   │   ├── projects/          # Projects + Dialogs
 │   │   │   │   └── components/
-│   │   │   │       └── project-form-dialog/  # CRUD Dialog
+│   │   │   │       └── project-form-dialog/    # CRUD + Upload
 │   │   │   └── collaborators/     # Collaborators + Dialogs
 │   │   │       └── components/
-│   │   │           └── collaborator-form-dialog/  # CRUD Dialog
+│   │   │           └── collaborator-form-dialog/ # CRUD + Upload
 │   │   └── shared/                # Shared Components
+│   │       └── components/
+│   │           └── image-upload/
+│   │               └── image-upload.component.ts # Composant Upload
 │   └── package.json
 ├── docs/                          # Documentation
 │   ├── QUICKSTART.md             # Démarrage rapide
 │   ├── TECHNICAL_DOCUMENTATION.md # Doc technique avec diagrammes
 │   ├── USER_GUIDE.md             # Guide utilisateur complet
 │   ├── STYLE_GUIDE.md            # Guide de style SCSS
-│   └── DOCKER_DEPLOYMENT.md      # Guide Docker
+│   ├── DOCKER_DEPLOYMENT.md      # Guide Docker
+│   ├── IMAGE_UPLOAD_GUIDE.md     # 🆕 Guide upload d'images
+│   └── API_ENDPOINTS_STATUS.md   # 🆕 État des endpoints (17/32)
+├── uploads/                       # 🆕 Fichiers uploadés (gitignore)
+│   ├── projects/                  # Logos de projets
+│   └── collaborators/             # Photos de collaborateurs
 ├── docker-compose.yml            # Configuration Docker
 └── README.md                     # Ce fichier
 ```
@@ -287,7 +374,16 @@ DigicampMonitoring/
 - **Durée de vie** : 24 heures
 - **Stockage** : localStorage
 - **Refresh** : Automatique
-- **Endpoints protégés** : Tous sauf `/api/auth/*`
+- **Endpoints protégés** : Tous sauf `/api/auth/*` et `GET /api/files/**`
+
+### Sécurité des Uploads
+
+- **Validation MIME types** : Uniquement images autorisées
+- **Taille maximale** : 5MB (configurable)
+- **Noms uniques** : UUID pour éviter les collisions
+- **Path traversal prevention** : Validation des chemins
+- **Sanitization** : Nettoyage des noms de fichiers
+- **Stockage isolé** : Répertoires séparés par type
 
 ### Sécurité des Données
 
@@ -308,7 +404,7 @@ GET    /api/auth/me             # Utilisateur courant
 ### Projets
 ```http
 GET    /api/projects?page=0&size=10    # Liste paginée
-POST   /api/projects                    # Créer
+POST   /api/projects                    # Créer (+ logoBase64)
 GET    /api/projects/{id}               # Détails
 PUT    /api/projects/{id}               # Modifier
 DELETE /api/projects/{id}               # Supprimer
@@ -319,13 +415,24 @@ POST   /api/projects/{id}/newsletter    # Générer newsletter
 ### Collaborateurs
 ```http
 GET    /api/collaborators?page=0&size=10&available=true  # Liste
-POST   /api/collaborators                                 # Créer
+POST   /api/collaborators                                 # Créer (+ photoBase64)
 GET    /api/collaborators/{id}                           # Détails
 PUT    /api/collaborators/{id}                           # Modifier
 DELETE /api/collaborators/{id}                           # Supprimer
 ```
 
-📘 **Pour plus de détails, consultez la [Documentation Technique](./docs/TECHNICAL_DOCUMENTATION.md)**
+### 🆕 Fichiers/Upload
+```http
+POST   /api/files/upload/image           # Upload multipart
+POST   /api/files/upload/base64          # Upload Base64
+GET    /api/files/{directory}/{filename} # Récupérer image (public)
+DELETE /api/files/{directory}/{filename} # Supprimer image
+```
+
+📘 **Pour plus de détails :**
+- [Documentation Technique](./docs/TECHNICAL_DOCUMENTATION.md)
+- [Guide Upload d'Images](./docs/IMAGE_UPLOAD_GUIDE.md)
+- [État des Endpoints API](./docs/API_ENDPOINTS_STATUS.md) - **17/32 endpoints implémentés (53%)**
 
 ## 🧪 Tests
 
@@ -386,8 +493,15 @@ npm install
 # Trouver le processus
 lsof -i :8080
 
-# Ou changer le port dans application.properties
+# Ou changer le port dans application.yml
 server.port=8081
+```
+
+**Problème : Uploads échouent**
+```bash
+# Vérifier les permissions du répertoire uploads
+mkdir -p uploads/projects uploads/collaborators
+chmod -R 755 uploads/
 ```
 
 🐛 **Pour plus de solutions, consultez le [Guide de Déploiement Docker](./docs/DOCKER_DEPLOYMENT.md#-dépannage)**
@@ -409,19 +523,31 @@ server.port=8081
 
 ## 📝 Roadmap
 
-### Version 1.1 (À venir)
-- [ ] Délégation de droits EM
+### ✅ Version 1.0 (Actuel)
+- [x] CRUD Projets avec upload de logo
+- [x] CRUD Collaborateurs avec upload de photo
+- [x] Composant ImageUpload réutilisable
+- [x] FileStorageService avec support Base64
+- [x] Documentation complète (7 guides)
+
+### 🚧 Version 1.1 (En cours - 53% complété)
+- [x] Upload d'images avec drag & drop
+- [x] Système de fichiers Backend
+- [ ] Endpoints Project Status (2)
+- [ ] Endpoints Project Assignments (5)
+- [ ] Endpoints Project Needs (5)
+- [ ] Dashboard & Statistiques (3)
 - [ ] Templates de newsletter personnalisables
 - [ ] Import/Export CSV de collaborateurs
-- [ ] Statistiques avancées
+
+### 🔮 Version 2.0 (Futur)
+- [ ] Délégation de droits EM
 - [ ] Notifications en temps réel
 - [ ] Mode sombre
-
-### Version 2.0
 - [ ] Multi-tenancy
 - [ ] Gestion des congés
 - [ ] Planning Gantt
-- [ ] API publique
+- [ ] API publique avec Swagger
 - [ ] Application mobile
 
 ## 📄 Licence
@@ -438,6 +564,7 @@ Ce projet est privé et destiné uniquement à un usage interne Digicamp.
 - Spring Boot team
 - Angular team
 - PrimeNG team
+- Quill.js team
 - La communauté open source
 
 ---
@@ -456,4 +583,6 @@ Pour toute question ou assistance :
   <strong>Fait avec ❤️ pour Digicamp</strong>
   <br>
   <sub>Version 1.0.0 - 12 octobre 2025</sub>
+  <br>
+  <sub>🆕 Nouveau : Upload d'images avec drag & drop moderne</sub>
 </div>
