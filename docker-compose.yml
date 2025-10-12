@@ -12,6 +12,7 @@ services:
       - "1433:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
+      - ./back/init-db:/docker-entrypoint-initdb.d
     networks:
       - digicamp-network
     healthcheck:
@@ -52,14 +53,24 @@ services:
       - DB_USERNAME=sa
       - DB_PASSWORD=YourPassword123!
       - JWT_SECRET=VotreCleSuperSecreteQuiDoitEtreTresLonguePourPlusDeSecurite123456789
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_SQL_INIT_MODE=always
     ports:
       - "8080:8080"
+    volumes:
+      - uploads-data:/app/uploads
     depends_on:
       db-init:
         condition: service_completed_successfully
     networks:
       - digicamp-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   frontend:
     build:
@@ -76,6 +87,9 @@ services:
 
 volumes:
   sqlserver-data:
+    driver: local
+  uploads-data:
+    driver: local
 
 networks:
   digicamp-network:
