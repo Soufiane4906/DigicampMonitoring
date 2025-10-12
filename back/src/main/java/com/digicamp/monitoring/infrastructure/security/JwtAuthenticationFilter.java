@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,6 +16,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -26,41 +28,67 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
+        
+        String requestURI = request.getRequestURI();
+        String method = request.getMethod();
+        
+        log.debug("=== JWT Filter - Processing request: {} {}", method, requestURI);
+        
         try {
             String jwt = getJwtFromRequest(request);
 
-            // Vérifier si un token JWT est présent
             if (StringUtils.hasText(jwt)) {
+                log.debug("JWT Token trouvé, longueur: {} caractères", jwt.length());
+                
                 // Extraire le nom d'utilisateur du token
                 String username = tokenProvider.extractUsername(jwt);
+                log.debug("Username extrait du token: {}", username);
                 
                 // Vérifier si l'utilisateur n'est pas déjà authentifié
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    // Charger les détails de l'utilisateur
-                    UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+                    log.debug("Utilisateur '{}' non encore authentifié, chargement des détails...", username);
                     
-                    // Valider le token
-                    if (tokenProvider.validateToken(jwt, userDetails)) {
-                        // Créer l'objet d'authentification
-                        UsernamePasswordAuthenticationToken authentication = 
-                                new UsernamePasswordAuthenticationToken(
-                                    userDetails, 
-                                    null, 
-                                    userDetails.getAuthorities()
-                                );
-                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    try {
+                        // Charger les détails de l'utilisateur
+                        UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+                        log.debug("UserDetails chargé pour '{}', Authorities: {}", username, userDetails.getAuthorities());
                         
-                        // Définir l'authentification dans le contexte de sécurité
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        // Valider le token
+                        if (tokenProvider.validateToken(jwt, userDetails)) {
+                            log.debug("Token validé avec succès pour '{}'", username);
+                            
+                            // Créer l'objet d'authentification
+                            UsernamePasswordAuthenticationToken authentication = 
+                                    new UsernamePasswordAuthenticationToken(
+                                        userDetails, 
+                                        null, 
+                                        userDetails.getAuthorities()
+                                    );
+                            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                            
+                            // Définir l'authentification dans le contexte de sécurité
+                            SecurityContextHolder.getContext().setAuthentication(authentication);
+                            log.info("✅ Authentification réussie pour '{}' - Accès à {} {}", username, method, requestURI);
+                        } else {
+                            log.warn("❌ Token invalide pour '{}'", username);
+                        }
+                    } catch (Exception e) {
+                        log.error("❌ Erreur lors du chargement de l'utilisateur '{}': {}", username, e.getMessage());
                     }
+                } else if (username != null) {
+                    log.debug("Utilisateur '{}' déjà authentifié", username);
+                } else {
+                    log.warn("❌ Impossible d'extraire le username du token");
                 }
+            } else {
+                log.debug("Aucun token JWT trouvé dans la requête {} {}", method, requestURI);
             }
         } catch (Exception ex) {
-            logger.error("Impossible de définir l'authentification de l'utilisateur dans le contexte de sécurité", ex);
-            // Ne pas lancer d'exception ici, laisser la requête continuer
+            log.error("❌ Exception dans JWT Filter pour {} {}: {}", method, requestURI, ex.getMessage(), ex);
         }
 
         filterChain.doFilter(request, response);
+        log.debug("=== JWT Filter - Requête {} {} terminée", method, requestURI);
     }
 
     /**
