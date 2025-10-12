@@ -10,9 +10,11 @@ Application web de gestion des projets et des ressources pour le périmètre Dig
 
 ## 📚 Documentation
 
+- 🚀 **[Démarrage Rapide](./docs/QUICKSTART.md)** - Guide de démarrage en 5 minutes
 - 📖 **[Guide Utilisateur](./docs/USER_GUIDE.md)** - Guide complet pour utiliser l'application
 - 📘 **[Documentation Technique](./docs/TECHNICAL_DOCUMENTATION.md)** - Architecture, diagrammes et API
 - 🎨 **[Guide de Style](./docs/STYLE_GUIDE.md)** - Design system et styles SCSS
+- 🐳 **[Guide de Déploiement Docker](./docs/DOCKER_DEPLOYMENT.md)** - Déploiement avec Docker Compose
 
 ## ✨ Fonctionnalités
 
@@ -29,6 +31,7 @@ Application web de gestion des projets et des ressources pour le périmètre Dig
 - ✅ **Statuts paramétrables** : En cours, Terminé, En pause, Annulé, Planifié
 - ✅ **Recherche et filtres**
 - ✅ **Affichage moderne** avec avatars et badges
+- ✅ **Dialog de confirmation** pour les suppressions
 
 ### 👥 Gestion des Collaborateurs
 - ✅ **CRUD complet** : Gestion des collaborateurs
@@ -41,6 +44,7 @@ Application web de gestion des projets et des ressources pour le périmètre Dig
 - ✅ **Gestion des compétences** : Tags de skills techniques
 - ✅ **Disponibilité** : Disponible / Occupé
 - ✅ **Recherche et filtres**
+- ✅ **Dialog de confirmation** pour les suppressions
 
 ### 🔗 Affectation Ressources
 - ✅ Affecter des collaborateurs aux projets
@@ -102,7 +106,8 @@ graph TB
 - **PrimeNG** - Bibliothèque UI moderne
   - Table, Dialog, Calendar, Editor
   - FileUpload, Dropdown, Chips, Avatar
-  - Button, Card, Tag, MenuBar
+  - Button, Card, Tag, MenuBar, Toast
+  - ConfirmDialog, ConfirmationService
 - **RxJS** - Programmation réactive
 - **SCSS** - Styles avec design system moderne
 
@@ -136,6 +141,8 @@ docker-compose logs -f
 # Backend API: http://localhost:8080
 # SQL Server: localhost:1433
 ```
+
+📖 **Pour plus de détails, consultez le [Guide de Déploiement Docker](./docs/DOCKER_DEPLOYMENT.md)**
 
 ### Installation Locale (Développement)
 
@@ -207,6 +214,8 @@ Le dashboard vous donne une vue d'ensemble :
 2. **Générer newsletter**
 3. Le PDF se télécharge automatiquement
 
+📖 **Pour un guide détaillé, consultez le [Guide Utilisateur](./docs/USER_GUIDE.md)**
+
 ## 🎨 Design System
 
 ### Couleurs Principales
@@ -233,6 +242,8 @@ background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 ```
 
+🎨 **Pour plus de détails, consultez le [Guide de Style](./docs/STYLE_GUIDE.md)**
+
 ## 📊 Structure du Projet
 
 ```
@@ -251,13 +262,19 @@ DigicampMonitoring/
 │   │   │   ├── authentication/    # Login, Register
 │   │   │   ├── dashboard/         # Dashboard
 │   │   │   ├── projects/          # Projects + Dialogs
+│   │   │   │   └── components/
+│   │   │   │       └── project-form-dialog/  # CRUD Dialog
 │   │   │   └── collaborators/     # Collaborators + Dialogs
+│   │   │       └── components/
+│   │   │           └── collaborator-form-dialog/  # CRUD Dialog
 │   │   └── shared/                # Shared Components
 │   └── package.json
 ├── docs/                          # Documentation
+│   ├── QUICKSTART.md             # Démarrage rapide
 │   ├── TECHNICAL_DOCUMENTATION.md # Doc technique avec diagrammes
 │   ├── USER_GUIDE.md             # Guide utilisateur complet
-│   └── STYLE_GUIDE.md            # Guide de style SCSS
+│   ├── STYLE_GUIDE.md            # Guide de style SCSS
+│   └── DOCKER_DEPLOYMENT.md      # Guide Docker
 ├── docker-compose.yml            # Configuration Docker
 └── README.md                     # Ce fichier
 ```
@@ -307,6 +324,8 @@ GET    /api/collaborators/{id}                           # Détails
 PUT    /api/collaborators/{id}                           # Modifier
 DELETE /api/collaborators/{id}                           # Supprimer
 ```
+
+📘 **Pour plus de détails, consultez la [Documentation Technique](./docs/TECHNICAL_DOCUMENTATION.md)**
 
 ## 🧪 Tests
 
@@ -370,6 +389,8 @@ lsof -i :8080
 # Ou changer le port dans application.properties
 server.port=8081
 ```
+
+🐛 **Pour plus de solutions, consultez le [Guide de Déploiement Docker](./docs/DOCKER_DEPLOYMENT.md#-dépannage)**
 
 ## 🤝 Contribution
 
