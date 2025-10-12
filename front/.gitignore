@@ -1,0 +1,26 @@
+# Node modules
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Angular
+.angular/
+dist/
+tmp/
+out-tsc/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-*
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
