@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: digicamp-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourPassword123!
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - digicamp-network
+
+  backend:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    container_name: digicamp-backend
+    environment:
+      - DB_URL=jdbc:sqlserver://sqlserver:1433;databaseName=digicampdb;encrypt=true;trustServerCertificate=true
+      - DB_USERNAME=sa
+      - DB_PASSWORD=YourPassword123!
+      - JWT_SECRET=VotreCleSuperSecreteQuiDoitEtreTresLonguePourPlusDeSecurite123456789
+      - AZURE_STORAGE_CONNECTION_STRING=
+    ports:
+      - "8080:8080"
+    depends_on:
+      - sqlserver
+    networks:
+      - digicamp-network
+
+  frontend:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: digicamp-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - digicamp-network
+
+volumes:
+  sqlserver-data:
+
+networks:
+  digicamp-network:
+    driver: bridge
