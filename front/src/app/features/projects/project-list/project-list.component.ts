@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { ProjectService } from '../../../core/services/project.service';
 import { Project } from '../../../core/models/project.model';
 import { TableModule } from 'primeng/table';
@@ -18,6 +19,7 @@ import { AuthService } from '../../../core/services/auth.service';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     TableModule,
     ButtonModule,
     CardModule,
@@ -517,6 +519,11 @@ export class ProjectListComponent implements OnInit {
   }
 
   getProjectInitials(name: string): string {
+    if (!name) return '??';
+    const words = name.split(' ');
+    if (words.length >= 2) {
+      return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+    }
     return name.substring(0, 2).toUpperCase();
   }
 
