@@ -11,6 +11,10 @@ public class ProjectRequest {
     private String name;
     
     private String logoUrl;
+    
+    // Support pour l'upload Base64 du logo
+    private String logoBase64;
+    
     private String description;
     private String objectives;
     
