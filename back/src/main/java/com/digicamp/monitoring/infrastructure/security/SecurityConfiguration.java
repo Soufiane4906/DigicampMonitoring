@@ -46,6 +46,9 @@ public class SecurityConfiguration {
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 
+                // Error endpoint - permet l'accès sans authentification
+                .requestMatchers("/error").permitAll()
+                
                 // Files - GET is public (to serve images), POST/DELETE require auth
                 .requestMatchers(HttpMethod.GET, "/api/files/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/files/**").authenticated()
