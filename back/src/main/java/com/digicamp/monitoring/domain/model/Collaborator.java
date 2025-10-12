@@ -48,6 +48,9 @@ public class Collaborator {
     @Column(columnDefinition = "TEXT")
     private String skills;
 
+    @Column(name = "photo_url", length = 500)
+    private String photoUrl;
+
     @Column(nullable = false)
     @Builder.Default
     private Boolean available = true;
