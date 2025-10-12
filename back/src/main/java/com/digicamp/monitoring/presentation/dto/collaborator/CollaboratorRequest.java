@@ -20,5 +20,9 @@ public class CollaboratorRequest {
     private String position;
     private String site;
     private String skills;
+    
+    // Support pour l'upload Base64 de la photo
+    private String photoBase64;
+    
     private Boolean available = true;
 }
