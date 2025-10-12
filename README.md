@@ -1,146 +1,149 @@
-# DigicampMonitoring 🚀
+# 🎯 DigicampMonitoring
 
-Application complète de gestion de projets et de ressources pour Digicamp avec génération automatique de newsletters mensuelles en PDF.
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-green.svg)
+![Angular](https://img.shields.io/badge/Angular-17-red.svg)
+![Java](https://img.shields.io/badge/Java-17-orange.svg)
+![License](https://img.shields.io/badge/license-Private-lightgrey.svg)
 
-## 📋 Table des matières
+Application web de gestion des projets et des ressources pour le périmètre Digicamp. Elle permet de suivre les mouvements en termes de ressources, leur affectation aux différents projets internes et de générer des newsletters de projets en PDF.
 
-- [Vue d'ensemble](#vue-densemble)
-- [Architecture](#architecture)
-- [Technologies](#technologies)
-- [Installation](#installation)
-- [Utilisation](#utilisation)
-- [Déploiement Azure](#déploiement-azure)
-- [Fonctionnalités](#fonctionnalités)
-- [Structure du projet](#structure-du-projet)
-- [Contribution](#contribution)
+## 📚 Documentation
 
-## 🎯 Vue d'ensemble
+- 📖 **[Guide Utilisateur](./docs/USER_GUIDE.md)** - Guide complet pour utiliser l'application
+- 📘 **[Documentation Technique](./docs/TECHNICAL_DOCUMENTATION.md)** - Architecture, diagrammes et API
+- 🎨 **[Guide de Style](./docs/STYLE_GUIDE.md)** - Design system et styles SCSS
 
-DigicampMonitoring est une solution complète de gestion permettant aux Engineering Managers (EM) de :
-- Gérer les projets (création, suivi, statuts personnalisables)
-- Gérer les collaborateurs (profils, compétences, disponibilité)
-- Affecter les collaborateurs aux projets
-- Gérer les besoins des projets en ressources
-- Générer des newsletters mensuelles en PDF
+## ✨ Fonctionnalités
+
+### 🔐 Authentification
+- ✅ Connexion / Inscription avec JWT
+- ✅ Délégation de droits (à venir)
+- ✅ Session sécurisée
+
+### 📁 Gestion des Projets
+- ✅ **CRUD complet** : Créer, Lire, Modifier, Supprimer
+- ✅ **Upload de logo** : Image du projet (max 1MB)
+- ✅ **Éditeur riche** : Description avec formatage
+- ✅ **Gestion des dates** : Date de début/fin
+- ✅ **Statuts paramétrables** : En cours, Terminé, En pause, Annulé, Planifié
+- ✅ **Recherche et filtres**
+- ✅ **Affichage moderne** avec avatars et badges
+
+### 👥 Gestion des Collaborateurs
+- ✅ **CRUD complet** : Gestion des collaborateurs
+- ✅ **Upload de photo** : Photo professionnelle (max 1MB)
+- ✅ **Informations détaillées** :
+  - Nom, Prénom, Email professionnel
+  - Grade : A4, A5, B1, B2, B3, C1, C2, C3
+  - Poste : Développeur, Tech Lead, PO, QA, Scrum Master, etc.
+  - Site : Casa, Rabat, Indifférent
+- ✅ **Gestion des compétences** : Tags de skills techniques
+- ✅ **Disponibilité** : Disponible / Occupé
+- ✅ **Recherche et filtres**
+
+### 🔗 Affectation Ressources
+- ✅ Affecter des collaborateurs aux projets
+- ✅ Vue des disponibilités
+- ✅ Expression des besoins par profil (grade, techno, site)
+- ✅ Désaffectation automatique
+
+### 📄 Newsletter PDF
+- ✅ Génération automatique de newsletter
+- ✅ Template professionnel incluant :
+  - Logo et nom du projet
+  - Description et objectifs
+  - Collaborateurs avec photos
+  - Compétences et besoins
+- ✅ Export PDF prêt à partager
 
 ## 🏗️ Architecture
 
-### Architecture Globale
-```
-┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
-│                 │      │                  │      │                 │
-│   Angular 17    │─────▶│  Spring Boot 3   │─────▶│  Azure SQL DB   │
-│   (Frontend)    │      │   (Backend)      │      │                 │
-│                 │      │                  │      └─────────────────┘
-└─────────────────┘      └──────────────────┘
-        │                         │
-        │                         │
-        ▼                         ▼
-┌─────────────────┐      ┌──────────────────┐
-│ Azure Static    │      │ Azure Blob       │
-│ Web Apps        │      │ Storage          │
-└─────────────────┘      └──────────────────┘
-```
-
-### Backend - Architecture Hexagonale (DDD)
-```
-back/
-├── domain/              # Couche Domain
-│   ├── model/          # Entités métier
-│   └── repository/     # Interfaces de repositories
-├── application/        # Couche Application
-│   └── service/       # Services métier
-├── infrastructure/     # Couche Infrastructure
-│   ├── persistence/   # Implémentation JPA
-│   └── security/      # Configuration sécurité
-└── presentation/      # Couche Présentation
-    ├── controller/   # REST Controllers
-    └── dto/         # Data Transfer Objects
+```mermaid
+graph TB
+    subgraph "Frontend - Angular 17"
+        A[Components] --> B[Services]
+        B --> C[Guards]
+    end
+    
+    subgraph "Backend - Spring Boot 3.2"
+        D[Controllers] --> E[Use Cases]
+        E --> F[Domain Services]
+        F --> G[Repositories]
+    end
+    
+    subgraph "Database"
+        H[(SQL Server 2022)]
+    end
+    
+    B -->|HTTP/REST + JWT| D
+    G -->|JPA/Hibernate| H
+    
+    style A fill:#667eea
+    style D fill:#764ba2
+    style H fill:#f5576c
 ```
 
-### Frontend - Architecture Modulaire
-```
-front/src/app/
-├── core/               # Services centraux
-│   ├── guards/        # Guards de routing
-│   ├── interceptors/  # HTTP Interceptors
-│   ├── models/        # Interfaces TypeScript
-│   └── services/      # Services HTTP
-├── features/          # Modules fonctionnels
-│   ├── authentication/
-│   ├── dashboard/
-│   ├── projects/
-│   └── collaborators/
-└── shared/           # Composants partagés
-```
+### Technologies
 
-## 🛠️ Technologies
-
-### Backend
+#### Backend
 - **Java 17** - Langage de programmation
-- **Spring Boot 3.2.0** - Framework application
-- **Spring Data JPA** - ORM et accès données
-- **Spring Security + JWT** - Authentification et autorisation
-- **Azure SQL Database** - Base de données
-- **Azure Blob Storage** - Stockage de fichiers
-- **iText 7** - Génération de PDF
-- **Maven** - Gestion de dépendances
+- **Spring Boot 3.2.0** - Framework backend
+- **Spring Security** - Sécurité et authentification
+- **JWT (JJWT 0.12.3)** - Tokens d'authentification
+- **JPA/Hibernate** - ORM
+- **SQL Server 2022** - Base de données
+- **iText 7** - Génération PDF
+- **Maven** - Gestion des dépendances
 
-### Frontend
-- **Angular 17** - Framework frontend
-- **TypeScript 5.2** - Langage typé
-- **PrimeNG** - Bibliothèque de composants UI
+#### Frontend
+- **Angular 17** - Framework frontend avec standalone components
+- **TypeScript 5.2** - Langage
+- **PrimeNG** - Bibliothèque UI moderne
+  - Table, Dialog, Calendar, Editor
+  - FileUpload, Dropdown, Chips, Avatar
+  - Button, Card, Tag, MenuBar
 - **RxJS** - Programmation réactive
-- **Standalone Components** - Architecture moderne Angular
+- **SCSS** - Styles avec design system moderne
 
-### Infrastructure
-- **Azure App Service** - Hébergement backend
-- **Azure Static Web Apps** - Hébergement frontend
-- **Azure SQL Database** - Base de données managée
-- **Azure Blob Storage** - Stockage de fichiers
-- **Bicep** - Infrastructure as Code
-- **Docker** - Conteneurisation
-- **GitHub Actions** - CI/CD
+#### DevOps
+- **Docker & Docker Compose** - Conteneurisation
+- **Git & GitHub** - Contrôle de version
 
 ## 🚀 Installation
 
 ### Prérequis
-- Java 17+
-- Node.js 18+
-- Maven 3.6+
-- Docker (optionnel)
-- Azure CLI (pour déploiement)
+- **Docker Desktop** (recommandé)
+- **Git**
+- Node.js 18+ (pour développement local)
+- Java 17+ (pour développement local)
 
-### Installation locale avec Docker Compose
+### Installation Rapide avec Docker
 
-1. **Cloner le repository**
 ```bash
+# 1. Cloner le projet
 git clone https://github.com/Soufiane4906/DigicampMonitoring.git
 cd DigicampMonitoring
-```
 
-2. **Démarrer avec Docker Compose**
-```bash
+# 2. Démarrer tous les services
 docker-compose up -d
+
+# 3. Vérifier les logs
+docker-compose logs -f
+
+# 4. Accéder à l'application
+# Frontend: http://localhost
+# Backend API: http://localhost:8080
+# SQL Server: localhost:1433
 ```
 
-Cette commande démarre :
-- SQL Server (port 1433)
-- Backend Spring Boot (port 8080)
-- Frontend Angular (port 80)
-
-3. **Accéder à l'application**
-- Frontend : http://localhost
-- Backend API : http://localhost:8080/api
-- Health Check : http://localhost:8080/api/health
-
-### Installation manuelle
+### Installation Locale (Développement)
 
 #### Backend
 ```bash
 cd back
-mvn clean install
-mvn spring-boot:run
+./mvnw clean install
+./mvnw spring-boot:run
 ```
 
 #### Frontend
@@ -148,168 +151,288 @@ mvn spring-boot:run
 cd front
 npm install
 npm start
+# Application disponible sur http://localhost:4200
 ```
 
 ## 📖 Utilisation
 
-### Première connexion
+### 1. Première Connexion
 
-1. **S'inscrire** sur http://localhost/auth/register
-   - Créer un compte utilisateur
-   - Le rôle "EM" est assigné automatiquement
+1. Ouvrez `http://localhost`
+2. Créez un compte via **"S'inscrire"**
+3. Connectez-vous avec vos identifiants
 
-2. **Se connecter** sur http://localhost/auth/login
-   - Utiliser les identifiants créés
-   - Un token JWT est généré et stocké
+### 2. Dashboard
 
-3. **Accéder au Dashboard**
-   - Vue d'ensemble de l'application
-   - Navigation vers les modules
+Le dashboard vous donne une vue d'ensemble :
+- 📊 **Statistiques** : Nombre de projets et collaborateurs
+- 🚀 **Actions rapides** : Accès direct aux fonctionnalités principales
 
-### Gestion des projets
+### 3. Créer un Projet
 
-- **Lister** : `/projects` - Voir tous les projets
-- **Créer** : Cliquer sur "Nouveau projet"
-- **Modifier** : Icône crayon sur un projet
-- **Supprimer** : Icône poubelle sur un projet
+1. **Projets** → **Nouveau projet**
+2. Remplissez :
+   - Nom du projet ⭐
+   - Logo (optionnel, max 1MB)
+   - Description/Objectifs ⭐ (éditeur riche)
+   - Date de début ⭐
+   - Date de fin (optionnelle)
+   - Statut ⭐
+3. **Créer**
 
-### Gestion des collaborateurs
+### 4. Ajouter un Collaborateur
 
-- **Lister** : `/collaborators` - Voir tous les collaborateurs
-- **Créer** : Cliquer sur "Nouveau collaborateur"
-- **Modifier** : Icône crayon sur un collaborateur
-- **Supprimer** : Icône poubelle sur un collaborateur
-- **Filtrer disponibles** : Voir uniquement les collaborateurs disponibles
+1. **Collaborateurs** → **Nouveau collaborateur**
+2. Remplissez :
+   - Photo (optionnelle)
+   - Prénom & Nom ⭐
+   - Email ⭐
+   - Grade ⭐ (A4-C3)
+   - Poste ⭐
+   - Site ⭐ (Casa/Rabat/Indifférent)
+   - Compétences (tags)
+   - Disponibilité (toggle)
+3. **Créer**
 
-## ☁️ Déploiement Azure
+### 5. Affecter des Ressources
 
-### Déploiement de l'infrastructure
+1. Ouvrez un **projet**
+2. **Affecter collaborateur**
+3. Sélectionnez les collaborateurs disponibles
+4. **Affecter**
 
-```bash
-# Se connecter à Azure
-az login
+### 6. Générer une Newsletter
 
-# Déployer l'infrastructure avec Bicep
-az deployment sub create \
-  --location westeurope \
-  --template-file infrastructure/main.bicep \
-  --parameters environmentName=prod projectName=digicamp-monitoring
+1. Ouvrez un **projet**
+2. **Générer newsletter**
+3. Le PDF se télécharge automatiquement
+
+## 🎨 Design System
+
+### Couleurs Principales
+
+| Couleur | Hex | Usage |
+|---------|-----|-------|
+| Primary Purple | `#667eea` | Boutons, liens, headers |
+| Secondary Purple | `#764ba2` | Gradients, accents |
+| Pink | `#f5576c` | Collaborateurs, dangers |
+| Success | `#4CAF50` | États de succès |
+| Warning | `#FF9800` | Avertissements |
+| Info | `#2196F3` | Informations |
+
+### Gradients Signature
+
+```scss
+// Primary Gradient
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+// Secondary Gradient
+background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+
+// Background Gradient
+background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 ```
 
-### Déploiement du Backend
-
-```bash
-cd back
-mvn clean package
-az webapp deploy \
-  --resource-group digicamp-monitoring-prod-rg \
-  --name digicamp-monitoring-backend-prod \
-  --src-path target/*.jar
-```
-
-### Déploiement du Frontend
-
-```bash
-cd front
-npm run build -- --configuration production
-az staticwebapp deploy \
-  --name digicamp-monitoring-frontend-prod \
-  --resource-group digicamp-monitoring-prod-rg \
-  --app-location dist/digicamp-monitoring
-```
-
-## ✨ Fonctionnalités
-
-### ✅ Implémenté
-- [x] Authentification JWT (inscription, connexion, déconnexion)
-- [x] Gestion des utilisateurs avec rôles (EM)
-- [x] CRUD Projets (liste paginée, création, modification, suppression)
-- [x] Statuts de projets paramétrables
-- [x] CRUD Collaborateurs (liste paginée, création, modification, suppression)
-- [x] Gestion de la disponibilité des collaborateurs
-- [x] Dashboard avec navigation
-- [x] API REST sécurisée
-- [x] Architecture hexagonale (DDD)
-- [x] Responsive design avec PrimeNG
-- [x] Docker et Docker Compose
-- [x] Infrastructure as Code (Bicep)
-
-### 🔄 En cours / TODO
-- [ ] Dialogues de création/modification de projets
-- [ ] Dialogues de création/modification de collaborateurs
-- [ ] Affectation de collaborateurs aux projets
-- [ ] Gestion des besoins en ressources
-- [ ] Génération de newsletter PDF
-- [ ] Upload de logos de projets
-- [ ] Filtres et recherche avancée
-- [ ] Pagination côté serveur
-- [ ] Tests unitaires et d'intégration
-- [ ] Tests E2E
-
-## 📁 Structure du projet
+## 📊 Structure du Projet
 
 ```
 DigicampMonitoring/
-├── back/                    # Backend Spring Boot
-│   ├── src/
-│   │   └── main/
-│   │       ├── java/
-│   │       │   └── com/digicamp/monitoring/
-│   │       │       ├── domain/
-│   │       │       ├── application/
-│   │       │       ├── infrastructure/
-│   │       │       └── presentation/
-│   │       └── resources/
-│   │           └── application.yml
-│   ├── Dockerfile
-│   ├── pom.xml
-│   └── README.md
-│
-├── front/                   # Frontend Angular
-│   ├── src/
-│   │   └── app/
-│   │       ├── core/
-│   │       ├── features/
-│   │       └── shared/
-│   ├── Dockerfile
-│   ├── nginx.conf
-│   ├── package.json
-│   └── README.md
-│
-├── infrastructure/         # Infrastructure Azure (Bicep)
-│   ├── main.bicep
-│   └── modules/
-│       ├── sql-server.bicep
-│       ├── app-service.bicep
-│       ├── storage.bicep
-│       └── static-web-app.bicep
-│
-├── docker-compose.yml     # Configuration Docker Compose
-└── README.md             # Ce fichier
+├── back/                          # Backend Spring Boot
+│   ├── src/main/java/com/digicampmonitoring/
+│   │   ├── application/           # Use Cases & DTOs
+│   │   ├── domain/                # Domain Models & Services
+│   │   ├── infrastructure/        # Config & Security
+│   │   └── presentation/          # Controllers
+│   └── pom.xml
+├── front/                         # Frontend Angular
+│   ├── src/app/
+│   │   ├── core/                  # Services, Guards, Models
+│   │   ├── features/              # Feature Modules
+│   │   │   ├── authentication/    # Login, Register
+│   │   │   ├── dashboard/         # Dashboard
+│   │   │   ├── projects/          # Projects + Dialogs
+│   │   │   └── collaborators/     # Collaborators + Dialogs
+│   │   └── shared/                # Shared Components
+│   └── package.json
+├── docs/                          # Documentation
+│   ├── TECHNICAL_DOCUMENTATION.md # Doc technique avec diagrammes
+│   ├── USER_GUIDE.md             # Guide utilisateur complet
+│   └── STYLE_GUIDE.md            # Guide de style SCSS
+├── docker-compose.yml            # Configuration Docker
+└── README.md                     # Ce fichier
+```
+
+## 🔒 Sécurité
+
+### Authentification JWT
+
+- **Token** généré à la connexion
+- **Durée de vie** : 24 heures
+- **Stockage** : localStorage
+- **Refresh** : Automatique
+- **Endpoints protégés** : Tous sauf `/api/auth/*`
+
+### Sécurité des Données
+
+- **Mots de passe hashés** : bcrypt
+- **CORS configuré** : localhost uniquement
+- **Validation** : Frontend + Backend
+- **SQL Injection** : Protection JPA/Hibernate
+
+## 📡 API Endpoints
+
+### Authentification
+```http
+POST   /api/auth/login          # Connexion
+POST   /api/auth/register       # Inscription
+GET    /api/auth/me             # Utilisateur courant
+```
+
+### Projets
+```http
+GET    /api/projects?page=0&size=10    # Liste paginée
+POST   /api/projects                    # Créer
+GET    /api/projects/{id}               # Détails
+PUT    /api/projects/{id}               # Modifier
+DELETE /api/projects/{id}               # Supprimer
+POST   /api/projects/{id}/collaborators # Affecter collaborateurs
+POST   /api/projects/{id}/newsletter    # Générer newsletter
+```
+
+### Collaborateurs
+```http
+GET    /api/collaborators?page=0&size=10&available=true  # Liste
+POST   /api/collaborators                                 # Créer
+GET    /api/collaborators/{id}                           # Détails
+PUT    /api/collaborators/{id}                           # Modifier
+DELETE /api/collaborators/{id}                           # Supprimer
+```
+
+## 🧪 Tests
+
+### Backend
+```bash
+cd back
+./mvnw test
+```
+
+### Frontend
+```bash
+cd front
+npm test
+npm run e2e
+```
+
+## 🐛 Dépannage
+
+### Docker
+
+**Problème : Les conteneurs ne démarrent pas**
+```bash
+# Arrêter et nettoyer
+docker-compose down -v
+
+# Rebuild et redémarrer
+docker-compose up -d --build
+```
+
+**Problème : Base de données non créée**
+```bash
+# Vérifier les logs du service db-init
+docker-compose logs db-init
+
+# Recréer la base manuellement
+docker exec -it digicampmonitoring-sqlserver-1 /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P "YourStrong@Passw0rd" -C \
+  -Q "CREATE DATABASE digicampdb"
+```
+
+### Frontend
+
+**Problème : CORS Error**
+- Vérifiez que le backend est démarré
+- Vérifiez `SecurityConfiguration.java` pour les origines autorisées
+
+**Problème : Module not found**
+```bash
+cd front
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### Backend
+
+**Problème : Port 8080 déjà utilisé**
+```bash
+# Trouver le processus
+lsof -i :8080
+
+# Ou changer le port dans application.properties
+server.port=8081
 ```
 
 ## 🤝 Contribution
 
-Les contributions sont les bienvenues ! Pour contribuer :
-
 1. Fork le projet
-2. Créer une branche feature (`git checkout -b feature/AmazingFeature`)
+2. Créer une branche (`git checkout -b feature/AmazingFeature`)
 3. Commit les changements (`git commit -m 'Add AmazingFeature'`)
 4. Push vers la branche (`git push origin feature/AmazingFeature`)
 5. Ouvrir une Pull Request
 
-## 📝 License
+### Guidelines
 
-MIT License - voir le fichier [LICENSE](LICENSE) pour plus de détails
+- Suivez le [Guide de Style](./docs/STYLE_GUIDE.md)
+- Ajoutez des tests pour les nouvelles fonctionnalités
+- Mettez à jour la documentation si nécessaire
+- Utilisez des messages de commit clairs et descriptifs
+
+## 📝 Roadmap
+
+### Version 1.1 (À venir)
+- [ ] Délégation de droits EM
+- [ ] Templates de newsletter personnalisables
+- [ ] Import/Export CSV de collaborateurs
+- [ ] Statistiques avancées
+- [ ] Notifications en temps réel
+- [ ] Mode sombre
+
+### Version 2.0
+- [ ] Multi-tenancy
+- [ ] Gestion des congés
+- [ ] Planning Gantt
+- [ ] API publique
+- [ ] Application mobile
+
+## 📄 Licence
+
+Ce projet est privé et destiné uniquement à un usage interne Digicamp.
 
 ## 👥 Auteurs
 
-- **Soufiane** - *Développeur* - [Soufiane4906](https://github.com/Soufiane4906)
+- **Engineering Manager** - Digicamp
+- **Développeur** - [@Soufiane4906](https://github.com/Soufiane4906)
 
-## 📞 Contact
+## 🙏 Remerciements
 
-Pour toute question ou suggestion, n'hésitez pas à ouvrir une issue sur GitHub.
+- Spring Boot team
+- Angular team
+- PrimeNG team
+- La communauté open source
 
 ---
 
-**Fait avec ❤️ pour Digicamp**
+## 📞 Support
+
+Pour toute question ou assistance :
+
+- 📧 **Email** : support@digicamp.com
+- 📚 **Documentation** : [docs/](./docs/)
+- 🐛 **Issues** : [GitHub Issues](https://github.com/Soufiane4906/DigicampMonitoring/issues)
+
+---
+
+<div align="center">
+  <strong>Fait avec ❤️ pour Digicamp</strong>
+  <br>
+  <sub>Version 1.0.0 - 12 octobre 2025</sub>
+</div>
