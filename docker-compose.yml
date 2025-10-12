@@ -12,6 +12,7 @@ services:
       - "1433:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
+      - ./back/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     networks:
       - digicamp-network
     healthcheck:
@@ -20,6 +21,13 @@ services:
       timeout: 3s
       retries: 10
       start_period: 30s
+    command: >
+      /bin/bash -c "
+      /opt/mssql/bin/sqlservr &
+      sleep 30 &&
+      /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourPassword123!' -C -Q 'IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'\''digicampdb'\'') CREATE DATABASE digicampdb;' &&
+      wait
+      "
 
   backend:
     build:
