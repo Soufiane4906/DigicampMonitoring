@@ -21,6 +21,7 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+      enabled: true
 
 # JWT Configuration
 jwt:
@@ -31,8 +32,16 @@ jwt:
 app:
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:4200,http://localhost}
-  upload:
-    directory: ${UPLOAD_DIR:./uploads}
+  storage:
+    location: ${STORAGE_LOCATION:uploads}
+    max-file-size: 5
+    allowed-image-types:
+      - image/jpeg
+      - image/jpg
+      - image/png
+      - image/gif
+      - image/svg+xml
+      - image/webp
 
 # Logging
 logging:
