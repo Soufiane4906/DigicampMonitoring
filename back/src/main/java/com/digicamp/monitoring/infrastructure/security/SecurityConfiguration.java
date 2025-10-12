@@ -3,6 +3,7 @@ package com.digicamp.monitoring.infrastructure.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -37,10 +38,18 @@ public class SecurityConfiguration {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
+                // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                
+                // Files - GET is public (to serve images), POST/DELETE require auth
+                .requestMatchers(HttpMethod.GET, "/api/files/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/files/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/files/**").authenticated()
+                
+                // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
@@ -79,7 +88,9 @@ public class SecurityConfiguration {
             "http://localhost",
             "http://localhost:*",
             "http://127.0.0.1:*",
-            "http://frontend:*"
+            "http://frontend:*",
+            "http://*:4200",
+            "http://*:80"
         ));
         
         // Allow all HTTP methods
@@ -94,6 +105,7 @@ public class SecurityConfiguration {
         configuration.setExposedHeaders(Arrays.asList(
             "Authorization", 
             "Content-Type", 
+            "Content-Disposition",
             "X-Total-Count",
             "Access-Control-Allow-Origin",
             "Access-Control-Allow-Credentials"
