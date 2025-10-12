@@ -11,8 +11,11 @@ import { MenubarModule } from 'primeng/menubar';
 import { AvatarModule } from 'primeng/avatar';
 import { InputTextModule } from 'primeng/inputtext';
 import { TagModule } from 'primeng/tag';
-import { MenuItem } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ToastModule } from 'primeng/toast';
+import { MenuItem, ConfirmationService, MessageService } from 'primeng/api';
 import { AuthService } from '../../../core/services/auth.service';
+import { ProjectFormDialogComponent } from '../components/project-form-dialog/project-form-dialog.component';
 
 @Component({
   selector: 'app-project-list',
@@ -26,8 +29,12 @@ import { AuthService } from '../../../core/services/auth.service';
     MenubarModule,
     AvatarModule,
     InputTextModule,
-    TagModule
+    TagModule,
+    ConfirmDialogModule,
+    ToastModule,
+    ProjectFormDialogComponent
   ],
+  providers: [ConfirmationService, MessageService],
   template: `
     <div class="layout">
       <nav class="navbar">
@@ -180,7 +187,7 @@ import { AuthService } from '../../../core/services/auth.service';
                               severity="danger"
                               pTooltip="Supprimer"
                               tooltipPosition="top"
-                              (onClick)="deleteProject(project)" />
+                              (onClick)="confirmDelete(project)" />
                   </div>
                 </td>
               </tr>
@@ -204,6 +211,19 @@ import { AuthService } from '../../../core/services/auth.service';
         </div>
       </div>
     </div>
+
+    <!-- Project Form Dialog -->
+    <app-project-form-dialog
+      [(visible)]="displayDialog"
+      [project]="selectedProject"
+      (projectSaved)="onProjectSaved()">
+    </app-project-form-dialog>
+
+    <!-- Confirmation Dialog -->
+    <p-confirmDialog styleClass="custom-confirm-dialog"></p-confirmDialog>
+
+    <!-- Toast Messages -->
+    <p-toast position="top-right"></p-toast>
   `,
   styles: [`
     .layout {
@@ -456,6 +476,11 @@ import { AuthService } from '../../../core/services/auth.service';
       margin: 0 0 1.5rem 0;
     }
 
+    ::ng-deep .custom-confirm-dialog .p-dialog-header {
+      background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+      color: white;
+    }
+
     @media (max-width: 768px) {
       .page-header {
         flex-direction: column;
@@ -485,6 +510,8 @@ export class ProjectListComponent implements OnInit {
   private projectService = inject(ProjectService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private confirmationService = inject(ConfirmationService);
+  private messageService = inject(MessageService);
 
   projects: Project[] = [];
   loading = false;
@@ -492,6 +519,9 @@ export class ProjectListComponent implements OnInit {
   searchTerm = '';
   currentUser = this.authService.getCurrentUser();
   menuItems: MenuItem[] = [];
+  
+  displayDialog = false;
+  selectedProject?: Project;
 
   ngOnInit(): void {
     this.menuItems = [
@@ -540,6 +570,11 @@ export class ProjectListComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading projects:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erreur',
+          detail: 'Impossible de charger les projets'
+        });
         this.loading = false;
       }
     });
@@ -550,24 +585,62 @@ export class ProjectListComponent implements OnInit {
     console.log('Search:', this.searchTerm);
   }
 
-  viewProject(project: Project): void {
-    // TODO: Implement view project
-    console.log('View project:', project);
+  createProject(): void {
+    this.selectedProject = undefined;
+    this.displayDialog = true;
   }
 
-  createProject(): void {
-    // TODO: Implement create project dialog
-    console.log('Create project');
+  viewProject(project: Project): void {
+    this.router.navigate(['/projects', project.id]);
   }
 
   editProject(project: Project): void {
-    // TODO: Implement edit project dialog
-    console.log('Edit project:', project);
+    this.selectedProject = project;
+    this.displayDialog = true;
+  }
+
+  confirmDelete(project: Project): void {
+    this.confirmationService.confirm({
+      message: `Êtes-vous sûr de vouloir supprimer le projet "${project.name}" ? Cette action est irréversible.`,
+      header: 'Confirmation de suppression',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Oui, supprimer',
+      rejectLabel: 'Annuler',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.deleteProject(project);
+      }
+    });
   }
 
   deleteProject(project: Project): void {
-    // TODO: Implement delete confirmation
-    console.log('Delete project:', project);
+    this.projectService.deleteProject(project.id).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Succès',
+          detail: `Le projet "${project.name}" a été supprimé`
+        });
+        this.loadProjects();
+      },
+      error: (error) => {
+        console.error('Error deleting project:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erreur',
+          detail: 'Impossible de supprimer le projet'
+        });
+      }
+    });
+  }
+
+  onProjectSaved(): void {
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Succès',
+      detail: this.selectedProject ? 'Projet mis à jour' : 'Projet créé'
+    });
+    this.loadProjects();
   }
 
   logout(): void {
