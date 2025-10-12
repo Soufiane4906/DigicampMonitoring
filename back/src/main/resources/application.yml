@@ -22,12 +22,6 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
-# Azure Storage
-azure:
-  storage:
-    connection-string: ${AZURE_STORAGE_CONNECTION_STRING:}
-    container-name: ${AZURE_STORAGE_CONTAINER:digicamp-files}
-
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET:VotreCleSuperSecreteQuiDoitEtreTresLonguePourPlusDeSecurite123456789}
@@ -36,7 +30,7 @@ jwt:
 # Application Configuration
 app:
   cors:
-    allowed-origins: ${CORS_ORIGINS:http://localhost:4200}
+    allowed-origins: ${CORS_ORIGINS:http://localhost:4200,http://localhost}
   upload:
     directory: ${UPLOAD_DIR:./uploads}
 
