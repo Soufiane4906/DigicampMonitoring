@@ -24,7 +24,6 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <itext.version>7.2.5</itext.version>
-        <azure.version>5.8.0</azure.version>
     </properties>
     
     <dependencies>
@@ -59,7 +58,7 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>test</scope>
+            <scope>runtime</scope>
         </dependency>
         
         <!-- JWT -->
@@ -83,19 +82,17 @@
             <scope>runtime</scope>
         </dependency>
         
-        <!-- Azure Blob Storage -->
-        <dependency>
-            <groupId>com.azure</groupId>
-            <artifactId>azure-storage-blob</artifactId>
-            <version>${azure.version}</version>
-        </dependency>
-        
         <!-- PDF Generation -->
         <dependency>
             <groupId>com.itextpdf</groupId>
-            <artifactId>itext7-core</artifactId>
+            <artifactId>kernel</artifactId>
             <version>${itext.version}</version>
-            <type>pom</type>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>layout</artifactId>
+            <version>${itext.version}</version>
         </dependency>
         
         <!-- Lombok -->
@@ -103,20 +100,6 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
-        </dependency>
-        
-        <!-- MapStruct -->
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-            <version>1.5.5.Final</version>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct-processor</artifactId>
-            <version>1.5.5.Final</version>
-            <scope>provided</scope>
         </dependency>
         
         <!-- Testing -->
