@@ -7,6 +7,9 @@ import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { MenubarModule } from 'primeng/menubar';
+import { AvatarModule } from 'primeng/avatar';
+import { InputTextModule } from 'primeng/inputtext';
+import { TagModule } from 'primeng/tag';
 import { MenuItem } from 'primeng/api';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -18,31 +21,76 @@ import { AuthService } from '../../../core/services/auth.service';
     TableModule,
     ButtonModule,
     CardModule,
-    MenubarModule
+    MenubarModule,
+    AvatarModule,
+    InputTextModule,
+    TagModule
   ],
   template: `
     <div class="layout">
-      <p-menubar [model]="menuItems">
-        <ng-template pTemplate="end">
-          <div class="user-info">
-            <span>{{ currentUser?.username }}</span>
-            <p-button label="Déconnexion" 
-                      icon="pi pi-sign-out" 
-                      (onClick)="logout()"
-                      styleClass="p-button-text" />
-          </div>
-        </ng-template>
-      </p-menubar>
+      <nav class="navbar">
+        <div class="navbar-brand">
+          <i class="pi pi-chart-line brand-icon"></i>
+          <span class="brand-name">DigicampMonitoring</span>
+        </div>
+        <p-menubar [model]="menuItems" styleClass="main-menu">
+          <ng-template pTemplate="end">
+            <div class="user-section">
+              <p-avatar [label]="getUserInitials()" 
+                        styleClass="user-avatar" 
+                        shape="circle" />
+              <span class="username">{{ currentUser?.username }}</span>
+              <p-button icon="pi pi-sign-out" 
+                        (onClick)="logout()"
+                        [rounded]="true"
+                        [text]="true"
+                        severity="secondary"
+                        pTooltip="Déconnexion"
+                        tooltipPosition="bottom" />
+            </div>
+          </ng-template>
+        </p-menubar>
+      </nav>
 
       <div class="container">
-        <div class="header">
-          <h1>Gestion des Projets</h1>
+        <div class="page-header">
+          <div class="header-content">
+            <h1>
+              <i class="pi pi-folder"></i>
+              Gestion des Projets
+            </h1>
+            <p>Gérez tous vos projets en un seul endroit</p>
+          </div>
           <p-button label="Nouveau projet" 
                     icon="pi pi-plus" 
-                    (onClick)="createProject()" />
+                    (onClick)="createProject()"
+                    severity="success"
+                    [raised]="true" />
         </div>
 
-        <p-card>
+        <div class="projects-card">
+          <div class="card-toolbar">
+            <span class="p-input-icon-left search-input">
+              <i class="pi pi-search"></i>
+              <input pInputText type="text" 
+                     placeholder="Rechercher un projet..." 
+                     [(ngModel)]="searchTerm"
+                     (input)="onSearch()" />
+            </span>
+            <div class="toolbar-actions">
+              <p-button icon="pi pi-filter" 
+                        label="Filtres"
+                        [outlined]="true"
+                        severity="secondary" />
+              <p-button icon="pi pi-refresh" 
+                        (onClick)="loadProjects()"
+                        [outlined]="true"
+                        severity="secondary"
+                        pTooltip="Actualiser"
+                        tooltipPosition="bottom" />
+            </div>
+          </div>
+
           <p-table [value]="projects" 
                    [loading]="loading"
                    [paginator]="true"
@@ -50,94 +98,384 @@ import { AuthService } from '../../../core/services/auth.service';
                    [totalRecords]="totalRecords"
                    [lazy]="true"
                    (onLazyLoad)="loadProjects($event)"
-                   styleClass="p-datatable-striped">
+                   styleClass="modern-table"
+                   [tableStyle]="{'min-width': '60rem'}">
             <ng-template pTemplate="header">
               <tr>
-                <th>Nom</th>
+                <th pSortableColumn="name">
+                  Nom
+                  <p-sortIcon field="name"></p-sortIcon>
+                </th>
                 <th>Description</th>
-                <th>Date début</th>
-                <th>Date fin</th>
+                <th pSortableColumn="startDate">
+                  Date début
+                  <p-sortIcon field="startDate"></p-sortIcon>
+                </th>
+                <th pSortableColumn="endDate">
+                  Date fin
+                  <p-sortIcon field="endDate"></p-sortIcon>
+                </th>
                 <th>Statut</th>
-                <th>Actions</th>
+                <th style="width: 180px">Actions</th>
               </tr>
             </ng-template>
+            
             <ng-template pTemplate="body" let-project>
-              <tr>
-                <td>{{ project.name }}</td>
-                <td>{{ project.description || '-' }}</td>
-                <td>{{ project.startDate | date:'dd/MM/yyyy' }}</td>
-                <td>{{ project.endDate ? (project.endDate | date:'dd/MM/yyyy') : '-' }}</td>
+              <tr class="project-row">
                 <td>
-                  <span class="status-badge" [style.background-color]="project.status.color">
-                    {{ project.status.label }}
+                  <div class="project-name">
+                    <div class="project-avatar">
+                      {{ getProjectInitials(project.name) }}
+                    </div>
+                    <strong>{{ project.name }}</strong>
+                  </div>
+                </td>
+                <td>
+                  <span class="project-description">
+                    {{ project.description || 'Aucune description' }}
                   </span>
                 </td>
                 <td>
-                  <p-button icon="pi pi-pencil" 
-                            styleClass="p-button-rounded p-button-text" 
-                            (onClick)="editProject(project)" />
-                  <p-button icon="pi pi-trash" 
-                            styleClass="p-button-rounded p-button-text p-button-danger" 
-                            (onClick)="deleteProject(project)" />
+                  <span class="date-badge">
+                    <i class="pi pi-calendar"></i>
+                    {{ project.startDate | date:'dd/MM/yyyy' }}
+                  </span>
+                </td>
+                <td>
+                  @if (project.endDate) {
+                    <span class="date-badge">
+                      <i class="pi pi-calendar"></i>
+                      {{ project.endDate | date:'dd/MM/yyyy' }}
+                    </span>
+                  } @else {
+                    <span class="text-muted">En cours</span>
+                  }
+                </td>
+                <td>
+                  <p-tag [value]="project.status.label" 
+                         [style]="{'background-color': project.status.color}"
+                         [rounded]="true" />
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <p-button icon="pi pi-eye" 
+                              [rounded]="true" 
+                              [text]="true"
+                              severity="info"
+                              pTooltip="Voir"
+                              tooltipPosition="top"
+                              (onClick)="viewProject(project)" />
+                    <p-button icon="pi pi-pencil" 
+                              [rounded]="true" 
+                              [text]="true"
+                              severity="warning"
+                              pTooltip="Modifier"
+                              tooltipPosition="top"
+                              (onClick)="editProject(project)" />
+                    <p-button icon="pi pi-trash" 
+                              [rounded]="true" 
+                              [text]="true"
+                              severity="danger"
+                              pTooltip="Supprimer"
+                              tooltipPosition="top"
+                              (onClick)="deleteProject(project)" />
+                  </div>
                 </td>
               </tr>
             </ng-template>
+            
             <ng-template pTemplate="emptymessage">
               <tr>
-                <td colspan="6" class="text-center">Aucun projet trouvé</td>
+                <td colspan="6">
+                  <div class="empty-state">
+                    <i class="pi pi-inbox"></i>
+                    <h3>Aucun projet trouvé</h3>
+                    <p>Commencez par créer votre premier projet</p>
+                    <p-button label="Créer un projet" 
+                              icon="pi pi-plus"
+                              (onClick)="createProject()" />
+                  </div>
+                </td>
               </tr>
             </ng-template>
           </p-table>
-        </p-card>
+        </div>
       </div>
     </div>
   `,
   styles: [`
     .layout {
       min-height: 100vh;
-      background-color: #f8f9fa;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     }
 
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-
-    .header {
+    .navbar {
+      background: white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      padding: 0 2rem;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 2rem;
+      gap: 2rem;
     }
 
-    h1 {
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 0;
+    }
+
+    .brand-icon {
       font-size: 2rem;
-      color: #333;
-      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
-    .status-badge {
-      padding: 0.25rem 0.75rem;
-      border-radius: 4px;
+    .brand-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #333;
+    }
+
+    ::ng-deep .main-menu {
+      background: transparent;
+      border: none;
+      flex: 1;
+    }
+
+    .user-section {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    ::ng-deep .user-avatar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      font-size: 0.875rem;
       font-weight: 600;
     }
 
-    .user-info {
+    .username {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+      animation: slideDown 0.5s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .header-content h1 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: #333;
+      margin: 0 0 0.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .header-content h1 i {
+      color: #667eea;
+    }
+
+    .header-content p {
+      color: #666;
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .projects-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .card-toolbar {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .search-input {
+      flex: 1;
+      max-width: 400px;
+    }
+
+    .search-input input {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    ::ng-deep .modern-table {
+      border: none;
+    }
+
+    ::ng-deep .modern-table .p-datatable-thead > tr > th {
+      background: #f8f9fa;
+      color: #495057;
+      font-weight: 600;
+      border: none;
+      padding: 1rem 1.5rem;
+    }
+
+    ::ng-deep .modern-table .p-datatable-tbody > tr {
+      transition: all 0.3s ease;
+    }
+
+    ::ng-deep .modern-table .p-datatable-tbody > tr:hover {
+      background: #f8f9fa !important;
+    }
+
+    ::ng-deep .modern-table .p-datatable-tbody > tr > td {
+      border: none;
+      border-bottom: 1px solid #e9ecef;
+      padding: 1.25rem 1.5rem;
+    }
+
+    .project-row {
+      cursor: pointer;
+    }
+
+    .project-name {
       display: flex;
       align-items: center;
       gap: 1rem;
     }
 
-    .user-info span {
-      font-weight: 600;
+    .project-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.875rem;
+    }
+
+    .project-description {
+      color: #666;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .date-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.375rem 0.75rem;
+      background: #f8f9fa;
+      border-radius: 6px;
+      font-size: 0.875rem;
       color: #495057;
     }
 
-    .text-center {
+    .date-badge i {
+      color: #667eea;
+    }
+
+    .text-muted {
+      color: #999;
+      font-style: italic;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 0.25rem;
+      justify-content: flex-end;
+    }
+
+    .empty-state {
       text-align: center;
+      padding: 4rem 2rem;
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: #ccc;
+      margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+      font-size: 1.5rem;
+      color: #333;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .empty-state p {
+      color: #666;
+      margin: 0 0 1.5rem 0;
+    }
+
+    @media (max-width: 768px) {
+      .page-header {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .card-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .search-input {
+        max-width: 100%;
+      }
+
+      .navbar {
+        padding: 0 1rem;
+      }
+
+      .container {
+        padding: 1.5rem 1rem;
+      }
     }
   `]
 })
@@ -149,6 +487,7 @@ export class ProjectListComponent implements OnInit {
   projects: Project[] = [];
   loading = false;
   totalRecords = 0;
+  searchTerm = '';
   currentUser = this.authService.getCurrentUser();
   menuItems: MenuItem[] = [];
 
@@ -172,6 +511,15 @@ export class ProjectListComponent implements OnInit {
     ];
   }
 
+  getUserInitials(): string {
+    if (!this.currentUser?.username) return '?';
+    return this.currentUser.username.substring(0, 2).toUpperCase();
+  }
+
+  getProjectInitials(name: string): string {
+    return name.substring(0, 2).toUpperCase();
+  }
+
   loadProjects(event?: any): void {
     this.loading = true;
     const page = event ? event.first / event.rows : 0;
@@ -188,6 +536,16 @@ export class ProjectListComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  onSearch(): void {
+    // TODO: Implement search functionality
+    console.log('Search:', this.searchTerm);
+  }
+
+  viewProject(project: Project): void {
+    // TODO: Implement view project
+    console.log('View project:', project);
   }
 
   createProject(): void {
