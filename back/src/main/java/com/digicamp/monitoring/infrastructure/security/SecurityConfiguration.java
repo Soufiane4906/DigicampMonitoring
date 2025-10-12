@@ -39,6 +39,8 @@ public class SecurityConfiguration {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/health").permitAll()
+                .requestMatchers("/actuator/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
@@ -71,17 +73,37 @@ public class SecurityConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Allow both localhost and localhost:4200 for development
-        configuration.setAllowedOrigins(Arrays.asList(
+        
+        // Allow all common origins for development
+        configuration.setAllowedOriginPatterns(Arrays.asList(
             "http://localhost",
-            "http://localhost:80", 
-            "http://localhost:4200"
+            "http://localhost:*",
+            "http://127.0.0.1:*",
+            "http://frontend:*"
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        
+        // Allow all HTTP methods
+        configuration.setAllowedMethods(Arrays.asList(
+            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"
+        ));
+        
+        // Allow all headers
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        
+        // Expose headers
+        configuration.setExposedHeaders(Arrays.asList(
+            "Authorization", 
+            "Content-Type", 
+            "X-Total-Count",
+            "Access-Control-Allow-Origin",
+            "Access-Control-Allow-Credentials"
+        ));
+        
+        // Allow credentials (cookies, authorization headers)
         configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L); // Cache preflight response for 1 hour
+        
+        // Cache preflight response for 1 hour
+        configuration.setMaxAge(3600L);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
