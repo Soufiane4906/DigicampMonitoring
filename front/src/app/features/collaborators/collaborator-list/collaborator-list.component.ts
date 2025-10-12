@@ -12,8 +12,11 @@ import { TagModule } from 'primeng/tag';
 import { AvatarModule } from 'primeng/avatar';
 import { InputTextModule } from 'primeng/inputtext';
 import { ChipModule } from 'primeng/chip';
-import { MenuItem } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ToastModule } from 'primeng/toast';
+import { MenuItem, ConfirmationService, MessageService } from 'primeng/api';
 import { AuthService } from '../../../core/services/auth.service';
+import { CollaboratorFormDialogComponent } from '../components/collaborator-form-dialog/collaborator-form-dialog.component';
 
 @Component({
   selector: 'app-collaborator-list',
@@ -28,8 +31,12 @@ import { AuthService } from '../../../core/services/auth.service';
     TagModule,
     AvatarModule,
     InputTextModule,
-    ChipModule
+    ChipModule,
+    ConfirmDialogModule,
+    ToastModule,
+    CollaboratorFormDialogComponent
   ],
+  providers: [ConfirmationService, MessageService],
   template: `
     <div class="layout">
       <nav class="navbar">
@@ -203,7 +210,7 @@ import { AuthService } from '../../../core/services/auth.service';
                               severity="danger"
                               pTooltip="Supprimer"
                               tooltipPosition="top"
-                              (onClick)="deleteCollaborator(collaborator)" />
+                              (onClick)="confirmDelete(collaborator)" />
                   </div>
                 </td>
               </tr>
@@ -227,6 +234,19 @@ import { AuthService } from '../../../core/services/auth.service';
         </div>
       </div>
     </div>
+
+    <!-- Collaborator Form Dialog -->
+    <app-collaborator-form-dialog
+      [(visible)]="displayDialog"
+      [collaborator]="selectedCollaborator"
+      (collaboratorSaved)="onCollaboratorSaved()">
+    </app-collaborator-form-dialog>
+
+    <!-- Confirmation Dialog -->
+    <p-confirmDialog styleClass="custom-confirm-dialog"></p-confirmDialog>
+
+    <!-- Toast Messages -->
+    <p-toast position="top-right"></p-toast>
   `,
   styles: [`
     .layout {
@@ -508,6 +528,11 @@ import { AuthService } from '../../../core/services/auth.service';
       margin: 0 0 1.5rem 0;
     }
 
+    ::ng-deep .custom-confirm-dialog .p-dialog-header {
+      background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+      color: white;
+    }
+
     @media (max-width: 768px) {
       .page-header {
         flex-direction: column;
@@ -537,6 +562,8 @@ export class CollaboratorListComponent implements OnInit {
   private collaboratorService = inject(CollaboratorService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private confirmationService = inject(ConfirmationService);
+  private messageService = inject(MessageService);
 
   collaborators: Collaborator[] = [];
   loading = false;
@@ -544,6 +571,9 @@ export class CollaboratorListComponent implements OnInit {
   searchTerm = '';
   currentUser = this.authService.getCurrentUser();
   menuItems: MenuItem[] = [];
+  
+  displayDialog = false;
+  selectedCollaborator?: Collaborator;
 
   ngOnInit(): void {
     this.menuItems = [
@@ -571,9 +601,9 @@ export class CollaboratorListComponent implements OnInit {
   }
 
   getCollaboratorInitials(collaborator: Collaborator): string {
-    const firstInitial = collaborator.firstName?.charAt(0) || '';
-    const lastInitial = collaborator.lastName?.charAt(0) || '';
-    return (firstInitial + lastInitial).toUpperCase() || '??';
+    const first = collaborator.firstName?.charAt(0) || '';
+    const last = collaborator.lastName?.charAt(0) || '';
+    return (first + last).toUpperCase() || '??';
   }
 
   getDisplaySkills(skills: string[]): string[] {
@@ -593,6 +623,11 @@ export class CollaboratorListComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading collaborators:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erreur',
+          detail: 'Impossible de charger les collaborateurs'
+        });
         this.loading = false;
       }
     });
@@ -603,24 +638,62 @@ export class CollaboratorListComponent implements OnInit {
     console.log('Search:', this.searchTerm);
   }
 
-  viewCollaborator(collaborator: Collaborator): void {
-    // TODO: Implement view collaborator
-    console.log('View collaborator:', collaborator);
+  createCollaborator(): void {
+    this.selectedCollaborator = undefined;
+    this.displayDialog = true;
   }
 
-  createCollaborator(): void {
-    // TODO: Implement create collaborator dialog
-    console.log('Create collaborator');
+  viewCollaborator(collaborator: Collaborator): void {
+    this.router.navigate(['/collaborators', collaborator.id]);
   }
 
   editCollaborator(collaborator: Collaborator): void {
-    // TODO: Implement edit collaborator dialog
-    console.log('Edit collaborator:', collaborator);
+    this.selectedCollaborator = collaborator;
+    this.displayDialog = true;
+  }
+
+  confirmDelete(collaborator: Collaborator): void {
+    this.confirmationService.confirm({
+      message: `Êtes-vous sûr de vouloir supprimer ${collaborator.firstName} ${collaborator.lastName} ? Cette action est irréversible.`,
+      header: 'Confirmation de suppression',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Oui, supprimer',
+      rejectLabel: 'Annuler',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.deleteCollaborator(collaborator);
+      }
+    });
   }
 
   deleteCollaborator(collaborator: Collaborator): void {
-    // TODO: Implement delete confirmation
-    console.log('Delete collaborator:', collaborator);
+    this.collaboratorService.deleteCollaborator(collaborator.id).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Succès',
+          detail: `${collaborator.firstName} ${collaborator.lastName} a été supprimé(e)`
+        });
+        this.loadCollaborators();
+      },
+      error: (error) => {
+        console.error('Error deleting collaborator:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Erreur',
+          detail: 'Impossible de supprimer le collaborateur'
+        });
+      }
+    });
+  }
+
+  onCollaboratorSaved(): void {
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Succès',
+      detail: this.selectedCollaborator ? 'Collaborateur mis à jour' : 'Collaborateur créé'
+    });
+    this.loadCollaborators();
   }
 
   logout(): void {
