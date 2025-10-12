@@ -12,21 +12,37 @@ services:
       - "1433:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
-      - ./back/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     networks:
       - digicamp-network
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourPassword123!' -C -Q 'SELECT 1' || exit 1"]
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourPassword123!' -C -Q 'SELECT 1' -b -o /dev/null"]
       interval: 10s
       timeout: 3s
       retries: 10
       start_period: 30s
-    command: >
+
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: digicamp-db-init
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      - SA_PASSWORD=YourPassword123!
+    networks:
+      - digicamp-network
+    entrypoint: |
       /bin/bash -c "
-      /opt/mssql/bin/sqlservr &
-      sleep 30 &&
-      /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourPassword123!' -C -Q 'IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'\''digicampdb'\'') CREATE DATABASE digicampdb;' &&
-      wait
+      echo 'Waiting for SQL Server to be ready...';
+      sleep 10;
+      echo 'Creating database digicampdb...';
+      /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P 'YourPassword123!' -C -Q 'IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'\''digicampdb'\'') CREATE DATABASE digicampdb;' -b;
+      if [ \$$? -eq 0 ]; then
+        echo 'Database digicampdb created successfully or already exists';
+      else
+        echo 'Failed to create database';
+        exit 1;
+      fi
       "
 
   backend:
@@ -42,8 +58,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      sqlserver:
-        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     networks:
       - digicamp-network
     restart: unless-stopped
