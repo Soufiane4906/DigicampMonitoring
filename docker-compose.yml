@@ -38,7 +38,7 @@ services:
       sleep 5;
       echo 'Attempting to create database digicampdb...';
       /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P 'YourPassword123!' -C -Q 'SELECT @@VERSION' && echo 'SQL Server connection successful' || (echo 'Failed to connect to SQL Server' && exit 1);
-      /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P 'YourPassword123!' -C -Q 'IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'\''digicampdb'\'') BEGIN CREATE DATABASE digicampdb; PRINT '\''Database digicampdb created'\''; END ELSE PRINT '\''Database digicampdb already exists'\'';' && echo 'Database creation command executed successfully' || (echo 'Failed to create database' && exit 1);
+      /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P 'YourPassword123!' -C -Q \"IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'digicampdb') BEGIN CREATE DATABASE digicampdb; PRINT 'Database digicampdb created'; END ELSE PRINT 'Database digicampdb already exists';\" && echo 'Database creation command executed successfully' || (echo 'Failed to create database' && exit 1);
       echo '=== Database initialization completed successfully ===';
       "
 
